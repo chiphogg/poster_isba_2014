@@ -16,7 +16,7 @@
 \title[Smooth Animations]{\huge Smooth Animations to Visualize Gaussian Uncertainty}
 \author{Charles~R.~Hogg~III}
 \institute[Google]{Google, Inc.}
-\date{July 12, 2014}
+\date{July 16, 2014}
 \begin{document}
 \begin{frame}[fragile]
   pudu.
