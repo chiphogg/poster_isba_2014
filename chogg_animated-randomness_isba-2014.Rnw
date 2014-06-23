@@ -19,6 +19,24 @@
 \date{July 16, 2014}
 \begin{document}
 \begin{frame}[fragile]
-  pudu.
+  \begin{columns}[t]
+
+    % Left column.
+    \begin{column}{.3\linewidth}
+
+      \begin{block}{Introduction}
+      \end{block}
+
+    \end{column}
+
+    % Middle column.
+    \begin{column}{.3\linewidth}
+    \end{column}
+
+    % Right column.
+    \begin{column}{.3\linewidth}
+    \end{column}
+
+  \end{columns}
 \end{frame}
 \end{document}
