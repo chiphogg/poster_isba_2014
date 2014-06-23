@@ -1,0 +1,24 @@
+\documentclass[final,t]{beamer}
+
+%% Examples:
+%% http://www-i6.informatik.rwth-aachen.de/~dreuw/latexbeamerposter.php
+\mode<presentation> {
+  %% TODO(chogg): define my own theme
+  %% (e.g. for big headlines using my own logos)
+  \usetheme{I6pd2}
+}
+\usepackage[english]{babel}
+\usepackage[latin1]{inputenc}
+\usepackage{amsmath,amsthm, amssymb, latexsym}
+\usefonttheme[onlymath]{serif}
+\boldmath
+\usepackage[orientation=landscape,size=a0,scale=1.4,debug]{beamerposter}                       % e.g. for DIN-A0 poster
+\title[Smooth Animations]{\huge Smooth Animations to Visualize Gaussian Uncertainty}
+\author{Charles~R.~Hogg~III}
+\institute[Google]{Google, Inc.}
+\date{July 12, 2014}
+\begin{document}
+\begin{frame}[fragile]
+  pudu.
+\end{frame}
+\end{document}

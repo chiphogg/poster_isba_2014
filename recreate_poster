@@ -1,0 +1,5 @@
+#!/bin/bash
+
+Rscript -e 'library(knitr); knit("./chogg_animated-randomness_isba-2014.Rnw")' \
+  && pdflatex './chogg_animated-randomness_isba-2014' \
+  && pdflatex './chogg_animated-randomness_isba-2014'
