@@ -229,6 +229,7 @@ grid.arrange(graphs.lin[[1]], graphs.lin[[2]], graphs.lin[[3]],
         Motion is \textit{not different} at the keyframes
         \textbf{because they do not exist.}
         \\ \tiny (Also: add the dots, in the plots!)
+        \\ (And title the columns while I'm at it.)
       \end{block}
 
     \end{column}
