@@ -1,5 +1,13 @@
 \documentclass[final,t]{beamer}
 
+<<global_setup, include=FALSE>>=
+require(ggplot2)
+require(grid)
+require(gridExtra)
+require(reshape2)
+theme_set(theme_grey(base_size=25))
+@
+
 %% Examples:
 %% http://www-i6.informatik.rwth-aachen.de/~dreuw/latexbeamerposter.php
 \mode<presentation> {
@@ -9,7 +17,10 @@
 }
 \usepackage[english]{babel}
 \usepackage[latin1]{inputenc}
-\usepackage{amsmath,amsthm, amssymb, latexsym}
+\usepackage{amsmath,amsthm,amssymb,latexsym}
+\usepackage{pifont}
+\newcommand{\cmark}{\ding{51}}%
+\newcommand{\xmark}{\ding{55}}%
 \usefonttheme[onlymath]{serif}
 \boldmath
 \usepackage[orientation=landscape,size=a0,scale=1.4,debug]{beamerposter}                       % e.g. for DIN-A0 poster
@@ -19,24 +30,344 @@
 \date{July 16, 2014}
 \begin{document}
 \begin{frame}[fragile]
-  \begin{columns}[t]
+  \begin{columns}[T,onlytextwidth]
 
     % Left column.
-    \begin{column}{.3\linewidth}
+    \begin{column}{.32\linewidth}
 
       \begin{block}{Introduction}
+        \begin{itemize}
+          \item \textbf{Goal:} Visualize uncertainty in \textit{curves and
+            surfaces}
+          \item \textbf{Approach:} animations
+            \begin{itemize}
+              \item Each frame shows one draw from posterior
+              \item Consecutive frames differ infinitesimally (i.e.,
+                \textit{continuous} animations)
+            \end{itemize}
+          \item \textbf{Results:}
+            \begin{itemize}
+              \item \textbf{Smooth, keyframe-free} animations (moving
+                \textit{beyond interpolation})
+              \item \textbf{New framework} for all future work in Gaussian
+                animations
+            \end{itemize}
+        \end{itemize}
+      \end{block}
+
+      \begin{block}{Interpolation caveats}
+<<interpolation, echo=FALSE, fig.width=12>>=
+n.lines <- 500
+set.seed(2)
+times <- 0:1
+sigmas <- c(1, sqrt(0.5), 1)
+sigma_labels <- 2 * (-1:1)
+x <- 0.5 * (0:2)
+normal.data <- data.frame(y=rnorm(n=2 * n.lines),
+                          x=rep(times, each=n.lines),
+                          group=rep(1:n.lines, 2))
+two.sigma <- data.frame(x=rep(x, 2),
+                        y=2 * c(-sigmas, sigmas),
+                        keyframe=rep(c(TRUE, FALSE, TRUE), 2),
+                        label=rep(c('+', '-'), each=length(x)))
+p <- (ggplot(data=normal.data)
+      + geom_line(colour='grey', aes(x=x, y=y, group=group))
+      + geom_vline(aes(xintercept=x))
+      + geom_line(data=two.sigma, aes(x=x, y=y, group=label), colour='purple')
+      + geom_segment(data=two.sigma,
+                     aes(x=x, xend=x, y=y + 0.5 * sign(y), yend=y,
+                         colour=keyframe),
+                     size=3,
+                     arrow=arrow(length=unit(0.5, "cm")))
+      + scale_x_continuous("Time", breaks=times, labels=c(expression(t[0]),
+                                                          expression(t[1])))
+      + scale_y_continuous("Sigma", breaks=sigma_labels, labels=sigma_labels)
+      + scale_colour_manual(guide=FALSE, values=c('red', 'green'))
+      + ggtitle('Linear interpolation between keyframes')
+      )
+print(p)
+@
+        Na\"{i}ve interpolation: \textbf{variance too small} between keyframes
+        \\ \huge Next up: make side-by-side figure with ESG.  Show \textbf{actual}
+        quantiles.  (Means I need to make x-values and interpolate...)
       \end{block}
 
     \end{column}
 
     % Middle column.
-    \begin{column}{.3\linewidth}
+    \begin{column}{.32\linewidth}
+
+      \begin{block}{Basis function view}
+<<basis_setup, include=FALSE>>=
+N.out <- 500
+N.frames <- 8
+t.frames <- 1:N.frames
+t.out <- seq(from=0, to=N.frames, length=N.out)
+weight <- function(t.in, t.out, FUN) {
+  ifelse(abs(t.in - t.out) > 1, 0, FUN(t.in, t.out))
+}
+periodic_weight <- function(t.in, t.out, period, FUN) {
+  # Dirty hack to make the basis functions periodic (instead of always 0 at
+  # t=0).
+  pmax(weight(t.in, t.out, FUN), weight(t.in, t.out - period, FUN))
+}
+MyMatrix <- function(t, N) {
+  cbind(
+    outer(t, 1:N, function(t, i) sin(pi * i * t / N)),
+    outer(t, N:1, function(t, i) cos(pi * i * t / N))) / sqrt(N)
+}
+interp.linear <- outer(t.out, t.frames,
+                       function(x, y) {
+                         periodic_weight(x, y, N.frames,
+                                         function(a, b) 1 - abs(a - b))
+                       })
+interp.esg <- outer(t.out, t.frames,
+                    function(x, y) {
+                      periodic_weight(x, y, N.frames,
+                                      function(a, b) cos((a - b) * pi / 2))
+                    })
+interp.smooth <- MyMatrix(t.out, max(t.frames) / 2)
+line.size <- 1.5
+basis.colors <- scale_colour_brewer(palette='Set1')
+basis.theme <- theme(legend.position='none')
+basis.plot <- function(mat, title) {
+  d <- data.frame(y=as.vector(mat), t=t.out,
+    label=rep(paste0('a', 1:N.frames), each=N.out))
+  p <- (ggplot(data=d, aes(x=t, y=y, colour=label))
+    + geom_hline(yintercept=0)
+    + geom_line(size=line.size)
+    + scale_x_continuous('', limits=c(0, N.frames))
+    + scale_y_continuous('', limits=c(-1, 1), breaks=(-1):1)
+    + basis.colors
+    + basis.theme
+    + ggtitle(title)
+    + theme(axis.text.x=element_blank())
+    )
+  return (p)
+}
+@
+        \begin{table}
+          \begin{tabular}{|l|c|c|c|}
+            \hline
+            Animation Method
+            & \parbox[t][2.5em]{5em}{Statistically \\ Correct}
+            & Stationary
+            & Smooth \\
+            \hline
+<<basis_linear, echo=FALSE, fig.height=2.2>>=
+print(basis.plot(interp.linear, 'Naive linear interpolation'))
+@
+            & {\Huge \color{red}{\xmark}} & {\Huge \color{red}{\xmark}} &
+            {\Huge \color{red}{\xmark}} \\
+            \hline
+<<basis_esg, echo=FALSE, fig.height=2.2>>=
+print(basis.plot(interp.esg, 'ESG interpolation'))
+@
+            & {\Huge \color{green}{\cmark}} & {\Huge \color{red}{\xmark}} &
+            {\Huge \color{red}{\xmark}} \\
+            \hline
+<<basis_smooth, echo=FALSE, fig.height=2.2>>=
+print(basis.plot(interp.smooth, 'Smooth timetraces'))
+@
+            & {\Huge \color{green}{\cmark}} & {\Huge \color{green}{\cmark}} &
+            {\Huge \color{green}{\cmark}} \\
+            \hline
+          \end{tabular}
+        \end{table}
+
+      \end{block}
+
+      \begin{block}{Physical motion: basic kinematics}
+        {\small Check \textit{velocity} and \textit{acceleration} for a
+        fuller picture of how these animations move:} \\
+<<kinematics, echo=FALSE, fig.width=14, fig.height=7>>=
+hacky_derivative <- function(mat, t, deriv=0) {
+  # Take the derivative with respect to the rows.
+  if (deriv == 0) {
+    return (mat)
+  }
+  mat.aug <- rbind(mat, mat[1, ])
+  t.aug <- c(t, t[1])
+  hacky_derivative(diff(mat.aug) / diff(t.aug), t, deriv - 1)
+}
+graph <- function(label, interp.mat, deriv=0, scale=1, N.draws=60, seed=2) {
+  set.seed(seed)
+  mat <- hacky_derivative(interp.mat, t=t.out, deriv=deriv)
+  random.data <- matrix(rnorm(n=ncol(mat) * N.draws), ncol=N.draws)
+  timetraces <- data.frame(y=as.vector(mat %*% random.data),
+                           group=rep(1:N.draws, each=nrow(mat)),
+                           t=t.out)
+  first_timetrace <- timetraces[1:nrow(mat), ]
+  p <- (ggplot(data=timetraces, aes(x=t, y=y, group=group))
+        + geom_line(colour='#999999')
+        + geom_line(data=first_timetrace)
+        + scale_y_continuous("", breaks=scale * (-3):3)
+        + scale_x_continuous("")
+        + coord_cartesian(ylim=3 * ((pi / 2) ^ (2 * deriv)) * c(-1, 1))
+        + theme(axis.text.x=element_blank())
+        )
+  return (p)
+}
+graphs <- function(label, mat) {
+  list(graph(label, mat, deriv=0, scale=2),
+       graph(label, mat, deriv=1, scale=5),
+       graph(label, mat, deriv=2, scale=10))
+}
+graphs.lin <- graphs(label="Linear Interpolation", mat=interp.linear)
+graphs.esg <- graphs(label="ESG Interpolation", mat=interp.esg)
+graphs.smooth <- graphs(label="Smooth Timetraces", mat=interp.smooth)
+grid.arrange(graphs.lin[[1]], graphs.lin[[2]], graphs.lin[[3]], 
+             graphs.esg[[1]], graphs.esg[[2]], graphs.esg[[3]], 
+             graphs.smooth[[1]], graphs.smooth[[2]], graphs.smooth[[3]],
+             ncol=3)
+#grid.arrange(position_graph(label="Linear Interpolation",
+#                            interp.mat=interp.linear),
+#             position_graph(label="Linear Interpolation",
+#                            interp.mat=interp.linear),
+#             ncol = 1)
+@
+        Motion is \textit{not different} at the keyframes
+        \textbf{because they do not exist.}
+        \\ \tiny (Also: add the dots, in the plots!)
+      \end{block}
+
     \end{column}
 
     % Right column.
-    \begin{column}{.3\linewidth}
+    \begin{column}{.32\linewidth}
+
+      \begin{block}{The Infinite Limit}
+      \end{block}
+
+      \begin{block}{Conclusion}
+      \end{block}
+
     \end{column}
 
   \end{columns}
+
+  \begin{block}{Gaussian Processes refresher: Probabilities for Functions}
+    \begin{columns}[T]
+      \begin{column}{0.16\linewidth}
+        \begin{itemize}
+          \item Random curves and surfaces: \\
+            \textit{infinitely many} random variables!
+          \item \textbf{Gaussian Processes:} \\
+            work with \textit{any \textbf{finite} subset}
+            \begin{itemize}
+              \item Assume \textit{joint Gaussian distribution}
+            \end{itemize}
+          \item Simple example: \\
+            Start with 2 variables, \\
+            work up from there...
+        \end{itemize}
+      \end{column}
+      \begin{column}{0.12\linewidth}
+<<scatterplot_function, echo=FALSE>>=
+twod_scatterplot <- function(n, old=0) {
+  # A 2d scatterplot of draws from a bivariate normal.
+  #
+  # Args:
+  #   n: The number of points to plot
+  #   old: The number of points considered "old" (might be greyed out).
+  set.seed(1)
+  covariance <- 0.8
+  L <- t(chol(matrix(c(1, covariance, covariance, 1), nrow=2)))
+  x <- L %*% matrix(rnorm(n=2 * n), nrow=2)
+  d <- data.frame(x=x[1, ], y=x[2, ], type=c(rep('a', old), rep('b', n - old)))
+  lim <- 3
+  p <- (ggplot(data=d, aes(x=x, y=y, colour=type))
+    + geom_point(size=2)
+    + scale_x_continuous("X1", limits=c(-lim, lim))
+    + scale_y_continuous("X2", limits=c(-lim, lim))
+    + scale_colour_manual(values=c(a='grey40', b='black'))
+    + theme(legend.position='none')
+    + ggtitle("Scatterplot View")
+    )
+  return (p)
+}
+set.seed(1)
+total.points <- 1200
+old.points <- total.points - 50
+suppressWarnings(print(twod_scatterplot(total.points, old.points)))
+@
+        \tiny
+        \begin{itemize} \scriptsize
+          \item Highly correlated $\rightarrow$ \textbf{close to diagonal}
+          \item Works well for two variables
+        \end{itemize}
+      \end{column}
+      \begin{column}{0.12\linewidth}
+<<side_by_side, echo=FALSE>>=
+twod_side_by_side <- function(n, old=0) {
+  # A 2d scatterplot of draws from a bivariate normal.
+  #
+  # Args:
+  #   n: The number of points to plot
+  #   old: The number of points considered "old" (might be greyed out).
+  set.seed(1)
+  covariance <- 0.8
+  L <- t(chol(matrix(c(1, covariance, covariance, 1), nrow=2)))
+  x <- L %*% matrix(rnorm(n=2 * n), nrow=2)
+  d <- data.frame(X1=x[1, ], X2=x[2, ], type=c(rep('a', old), rep('b', n - old)))
+  d$id <- 1:nrow(d)
+  d_melt <- melt(d, id.vars=c('id', 'type'))
+  lim <- 3
+  p <- (ggplot(data=d_melt, aes(x=variable, y=value, group=id, colour=type))
+    + geom_point(size=4)
+    + geom_line(size=1.5)
+    + scale_x_discrete("variable")
+    + scale_y_continuous("value", limits=c(-lim, lim))
+    + scale_colour_manual(values=c(a='grey40', b='black'))
+    + theme(legend.position='none')
+    + ggtitle("\"Side-by-side\" view")
+    )
+  return (p)
+}
+set.seed(1)
+suppressWarnings(print(twod_side_by_side(total.points, old.points)))
+@
+        \begin{itemize} \scriptsize
+          \item Highly correlated $\rightarrow$ \textbf{horizontal lines}
+          \item Works well for more variables...
+        \end{itemize}
+      \end{column}
+      \begin{column}{0.12\linewidth}
+<<many_side_by_side, echo=FALSE>>=
+many_side_by_side <- function(k, n, i) {
+  set.seed(3)
+  X <- 1:k
+  K <- 0.9 ^ abs(outer(X, X, function(x, y) (x - y) ^ 2))
+  L <- t(chol(K))
+  x <- L %*% matrix(rnorm(n=k * n), nrow=k)
+  d <- data.frame(X=t(x))
+  d$id <- 1:nrow(d)
+  d$highlight = 'no'
+  d$highlight[which(d$id == i)] = 'yes'
+  require(reshape2)
+  d_melt <- melt(d[which(d$id <= i), ], id.vars=c('id', 'highlight'))
+  lim <- 3
+  p <- (ggplot(data=d_melt, aes(x=as.numeric(substring(variable, 3)), y=value, group=id, colour=highlight))
+    + geom_point(size=4)
+    + geom_line(size=1.5)
+    + scale_x_continuous("variable", breaks=1:k, labels=paste("X", 1:k, sep=''))
+    + scale_y_continuous("value", limits=c(-lim, lim))
+    + scale_colour_manual("", values=c(yes='red', no='grey50'))
+    + theme(legend.position='none')
+    + ggtitle("Many variables, side-by-side")
+    )
+  return (p)
+}
+set.seed(1)
+print(many_side_by_side(8, 10, 10))
+@
+        \begin{itemize} \scriptsize
+          \item Variables indexed by \textit{position}
+        \end{itemize}
+      \end{column}
+      \begin{column}{0.40\linewidth}
+      \end{column}
+    \end{columns}
+  \end{block}
 \end{frame}
 \end{document}
