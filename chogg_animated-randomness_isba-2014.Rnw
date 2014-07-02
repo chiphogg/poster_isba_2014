@@ -242,7 +242,19 @@ grid.arrange(graphs.lin[[1]], graphs.lin[[2]], graphs.lin[[3]],
       \begin{block}{The Infinite Limit}
       \end{block}
 
-      \begin{block}{Conclusion}
+      \begin{block}{Conclusions}
+        \begin{itemize}
+          \item First \textit{statistically correct} Gaussian animations with
+            \textbf{smooth and natural motion}
+          \item Moving beyond interpolation: \textbf{keyframes entirely
+            eliminated}
+          \item \textbf{Time-domain Gaussian Processes} enable \textit{animated
+            visualization} of \textbf{space-domain Gaussian Processes}
+            \begin{itemize}
+              \item \textit{Stationary} covariance function $\rightarrow$
+                \textit{no keyframes}
+            \end{itemize}
+        \end{itemize}
       \end{block}
 
     \end{column}
