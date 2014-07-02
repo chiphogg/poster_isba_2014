@@ -36,7 +36,7 @@ theme_set(theme_grey(base_size=25))
   \begin{columns}[T,onlytextwidth]
 
     % Left column.
-    \begin{column}{.32\linewidth}
+    \begin{column}{.38\linewidth}
 
       \begin{block}{Introduction}
         \begin{itemize}
@@ -237,7 +237,7 @@ grid.arrange(graphs.lin[[1]], graphs.lin[[2]], graphs.lin[[3]],
     \end{column}
 
     % Right column.
-    \begin{column}{.32\linewidth}
+    \begin{column}{.26\linewidth}
 
       \begin{block}{The Infinite Limit}
       \end{block}
