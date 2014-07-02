@@ -6,6 +6,53 @@ require(grid)
 require(gridExtra)
 require(reshape2)
 theme_set(theme_grey(base_size=25))
+
+N.out <- 500
+N.frames <- 8
+t.frames <- 1:N.frames
+t.out <- seq(from=0, to=N.frames, length=N.out)
+weight <- function(t.in, t.out, FUN) {
+  ifelse(abs(t.in - t.out) > 1, 0, FUN(t.in, t.out))
+}
+periodic_weight <- function(t.in, t.out, period, FUN) {
+  # Dirty hack to make the basis functions periodic (instead of always 0 at
+  # t=0).
+  pmax(weight(t.in, t.out, FUN), weight(t.in, t.out - period, FUN))
+}
+MyMatrix <- function(t, N) {
+  cbind(
+    outer(t, 1:N, function(t, i) sin(pi * i * t / N)),
+    outer(t, N:1, function(t, i) cos(pi * i * t / N))) / sqrt(N)
+}
+interp.linear <- outer(t.out, t.frames,
+                       function(x, y) {
+                         periodic_weight(x, y, N.frames,
+                                         function(a, b) 1 - abs(a - b))
+                       })
+interp.esg <- outer(t.out, t.frames,
+                    function(x, y) {
+                      periodic_weight(x, y, N.frames,
+                                      function(a, b) cos((a - b) * pi / 2))
+                    })
+interp.smooth <- MyMatrix(t.out, max(t.frames) / 2)
+line.size <- 1.5
+basis.colors <- scale_colour_brewer(palette='Set1')
+basis.theme <- theme(legend.position='none')
+basis.plot <- function(mat, title) {
+  d <- data.frame(y=as.vector(mat), t=t.out,
+    label=rep(paste0('a', 1:N.frames), each=N.out))
+  p <- (ggplot(data=d, aes(x=t, y=y, colour=label))
+    + geom_hline(yintercept=0)
+    + geom_line(size=line.size)
+    + scale_x_continuous('', limits=c(0, N.frames))
+    + scale_y_continuous('', limits=c(-1, 1), breaks=(-1):1)
+    + basis.colors
+    + basis.theme
+    + ggtitle(title)
+    + theme(axis.text.x=element_blank())
+    )
+  return (p)
+}
 @
 
 %% Examples:
@@ -100,54 +147,6 @@ print(p)
     \begin{column}{.32\linewidth}
 
       \begin{block}{Basis function view}
-<<basis_setup, include=FALSE>>=
-N.out <- 500
-N.frames <- 8
-t.frames <- 1:N.frames
-t.out <- seq(from=0, to=N.frames, length=N.out)
-weight <- function(t.in, t.out, FUN) {
-  ifelse(abs(t.in - t.out) > 1, 0, FUN(t.in, t.out))
-}
-periodic_weight <- function(t.in, t.out, period, FUN) {
-  # Dirty hack to make the basis functions periodic (instead of always 0 at
-  # t=0).
-  pmax(weight(t.in, t.out, FUN), weight(t.in, t.out - period, FUN))
-}
-MyMatrix <- function(t, N) {
-  cbind(
-    outer(t, 1:N, function(t, i) sin(pi * i * t / N)),
-    outer(t, N:1, function(t, i) cos(pi * i * t / N))) / sqrt(N)
-}
-interp.linear <- outer(t.out, t.frames,
-                       function(x, y) {
-                         periodic_weight(x, y, N.frames,
-                                         function(a, b) 1 - abs(a - b))
-                       })
-interp.esg <- outer(t.out, t.frames,
-                    function(x, y) {
-                      periodic_weight(x, y, N.frames,
-                                      function(a, b) cos((a - b) * pi / 2))
-                    })
-interp.smooth <- MyMatrix(t.out, max(t.frames) / 2)
-line.size <- 1.5
-basis.colors <- scale_colour_brewer(palette='Set1')
-basis.theme <- theme(legend.position='none')
-basis.plot <- function(mat, title) {
-  d <- data.frame(y=as.vector(mat), t=t.out,
-    label=rep(paste0('a', 1:N.frames), each=N.out))
-  p <- (ggplot(data=d, aes(x=t, y=y, colour=label))
-    + geom_hline(yintercept=0)
-    + geom_line(size=line.size)
-    + scale_x_continuous('', limits=c(0, N.frames))
-    + scale_y_continuous('', limits=c(-1, 1), breaks=(-1):1)
-    + basis.colors
-    + basis.theme
-    + ggtitle(title)
-    + theme(axis.text.x=element_blank())
-    )
-  return (p)
-}
-@
         \begin{table}
           \begin{tabular}{|l|c|c|c|}
             \hline
