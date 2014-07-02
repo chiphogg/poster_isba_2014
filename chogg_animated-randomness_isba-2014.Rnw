@@ -29,6 +29,9 @@ theme_set(theme_grey(base_size=25))
 \institute[Google]{Google, Inc.}
 \date{July 16, 2014}
 \begin{document}
+
+\setlength{\leftmargini}{1.5em}
+
 \begin{frame}[fragile]
   \begin{columns}[T,onlytextwidth]
 
