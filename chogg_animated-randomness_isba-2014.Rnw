@@ -45,13 +45,12 @@ theme_set(theme_grey(base_size=25))
           \item \textbf{Approach:} animations
             \begin{itemize}
               \item Each frame shows one draw from posterior
-              \item Consecutive frames differ infinitesimally (i.e.,
-                \textit{continuous} animations)
+              \item Consecutive frames show similar curves
+                (i.e., \textit{continuous} animations)
             \end{itemize}
           \item \textbf{Results:}
             \begin{itemize}
-              \item \textbf{Smooth, keyframe-free} animations (moving
-                \textit{beyond interpolation})
+              \item \textbf{Smooth, keyframe-free} animations
               \item \textbf{New framework} for all future work in Gaussian
                 animations
             \end{itemize}
