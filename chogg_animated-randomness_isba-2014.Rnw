@@ -105,40 +105,50 @@ basis.plot <- function(mat, title) {
       \end{block}
 
       \begin{block}{Interpolation caveats}
-<<interpolation, echo=FALSE, fig.width=12>>=
-n.lines <- 500
-set.seed(2)
-times <- 0:1
-sigmas <- c(1, sqrt(0.5), 1)
-sigma_labels <- 2 * (-1:1)
-x <- 0.5 * (0:2)
-normal.data <- data.frame(y=rnorm(n=2 * n.lines),
-                          x=rep(times, each=n.lines),
-                          group=rep(1:n.lines, 2))
-two.sigma <- data.frame(x=rep(x, 2),
-                        y=2 * c(-sigmas, sigmas),
-                        keyframe=rep(c(TRUE, FALSE, TRUE), 2),
-                        label=rep(c('+', '-'), each=length(x)))
-p <- (ggplot(data=normal.data)
-      + geom_line(colour='grey', aes(x=x, y=y, group=group))
-      + geom_vline(aes(xintercept=x))
-      + geom_line(data=two.sigma, aes(x=x, y=y, group=label), colour='purple')
-      + geom_segment(data=two.sigma,
-                     aes(x=x, xend=x, y=y + 0.5 * sign(y), yend=y,
-                         colour=keyframe),
-                     size=3,
-                     arrow=arrow(length=unit(0.5, "cm")))
-      + scale_x_continuous("Time", breaks=times, labels=c(expression(t[0]),
-                                                          expression(t[1])))
-      + scale_y_continuous("Sigma", breaks=sigma_labels, labels=sigma_labels)
-      + scale_colour_manual(guide=FALSE, values=c('red', 'green'))
-      + ggtitle('Linear interpolation between keyframes')
+        Linear interpolation: \textbf{variance too small} between keyframes
+<<interpolation, echo=FALSE, fig.width=14>>=
+quantiles.between.keyframes <- function(interp.mat, t, n.lines, title) {
+  # Given an interpolating matrix, plot the lines it creates, along with their
+  # quantiles.  (Statistically correct interpolations should yield flat
+  # quantiles.)
+  n.times <- nrow(interp.mat)
+  n.randoms <- ncol(interp.mat)
+  random.seeds <- matrix(rnorm(n=n.randoms * n.lines), nrow=n.randoms)
+
+  # Compute the random lines and structure them into a data.frame.
+  random.lines <- interp.mat %*% random.seeds
+  df.random.lines <- data.frame(t=t,
+                                y=as.vector(random.lines),
+                                group=rep(1:n.lines, each=n.times))
+
+  # Compute quantiles for the random lines at each timestep.
+  quantiles.to.use <- c(0.10, 0.25, 0.50, 0.75, 0.90)
+  n.quantiles <- length(quantiles.to.use)
+  quantiles <- apply(random.lines, 1, quantile, probs=quantiles.to.use, type=4)
+  df.quantiles <- data.frame(t=rep(t, each=n.quantiles),
+                             y=as.vector(quantiles),
+                             group=rep(1:n.quantiles, n.times))
+
+  keyframe.range <- round(range(t))
+  return (ggplot(data=df.random.lines, aes(x=t, y=y, group=group))
+      + geom_line(colour='#999999')
+      + geom_vline(xintercept=seq(from=keyframe.range[1],
+                                  to=keyframe.range[2],
+                                  by=1),
+                   colour='black')
+      + geom_line(data=df.quantiles, colour='purple')
+      + coord_cartesian(ylim=3 * c(-1, 1))
+      + ggtitle(title)
       )
-print(p)
+}
+n.lines <- 1000
+grid.arrange(quantiles.between.keyframes(interp.linear, t.out, n.lines,
+                                         "(Naive) linear interpolation"),
+             quantiles.between.keyframes(interp.esg, t.out, n.lines,
+                                         "ESG interpolation"),
+             ncol=2)
 @
-        Na\"{i}ve interpolation: \textbf{variance too small} between keyframes
-        \\ \huge Next up: make side-by-side figure with ESG.  Show \textbf{actual}
-        quantiles.  (Means I need to make x-values and interpolate...)
+        Ehlschlaeger, Shortridge, Goodchild (\textbf{ESG}) solved in 1997
       \end{block}
 
     \end{column}
