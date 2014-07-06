@@ -7,23 +7,22 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\setbeamercolor{headline}{fg=tabutter,bg=black}
-\setbeamercolor{footline}{fg=tabutter, bg=ta3gray}
+\setbeamercolor{headline}{fg=black,bg=white}
+\setbeamercolor{footline}{fg=googleGreen, bg=white}
 \setbeamerfont{footline}{size=\large,series=\tt}
-\setbeamercolor{separation line}{bg=ta2orange}
-\setbeamercolor{title in headline}{fg=tabutter}
-\setbeamercolor{author in headline}{fg=ta2orange}
-\setbeamercolor{institute in headline}{fg=ta3orange}
+\setbeamercolor{title in headline}{fg=googleBlue}
+\setbeamercolor{author in headline}{fg=googleBlue}
+\setbeamercolor{institute in headline}{fg=googleBlue}
 
 \setbeamercolor{framesubtitle}{fg=ta3orange, bg=ta2gray}
-\setbeamercolor{author in head/foot}{fg=ta2orange, bg=black}
+\setbeamercolor{author in head/foot}{fg=googleBlue, bg=white}
 \setbeamercolor{title in head/foot}{fg=ta2orange, bg=black}
 
-\setbeamercolor*{normal text}{fg=tachameleon, bg=ta3gray}
-\setbeamercolor*{block body}{bg=ta3aluminium,fg=black}
-\setbeamercolor*{block title}{fg=taorange,bg=ta2gray}
+\setbeamercolor*{normal text}{fg=tachameleon, bg=googleBlue}
+\setbeamercolor*{block body}{bg=white,fg=black}
+\setbeamercolor*{block title}{bg=googleYellow, fg=black}
 \setbeamerfont{block title}{size=\large,series=\bf}
-\setbeamercolor{upper separation line head}{fg=ta2orange}
+\setbeamercolor{upper separation line head}{fg=googleBlue}
 
 \setbeamercolor*{example body}{fg=ta3aluminium,bg=black}
 \setbeamercolor*{example text}{fg=ta3aluminium,bg=black}
@@ -40,13 +39,13 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \setbeamertemplate{block begin}{
   \vskip.75ex
-  \begin{beamercolorbox}[ht=3.5ex,dp=0.5ex,center,leftskip=-1em,colsep*=.75ex]{block title}%
+  \begin{beamercolorbox}[rounded=true,ht=3.5ex,dp=0.5ex,center,leftskip=-1em,colsep*=.75ex]{block title}%
     \usebeamerfont*{block title}%
     {\phantom{Gg}\insertblocktitle}% phantom because of baseline problem
   \end{beamercolorbox}%
   {\ifbeamercolorempty[bg]{block body}{}{\nointerlineskip\vskip-0.5pt}}%
   \usebeamerfont{block body}%
-  \begin{beamercolorbox}[leftskip=1em,colsep*=.75ex,sep=0.5ex,vmode]{block body}%
+  \begin{beamercolorbox}[rounded=true,leftskip=1em,colsep*=.75ex,sep=0.5ex,vmode]{block body}%
     \ifbeamercolorempty[bg]{block body}{\vskip-.25ex}{\vskip-.75ex}\vbox{}%
   }
   \setbeamertemplate{block end}{
@@ -68,22 +67,19 @@
         \usebeamercolor{author in headline}{\color{fg}\large{\insertauthor}\\[1ex]}
         \usebeamercolor{institute in headline}{\color{fg}\large{\insertinstitute}\\[1ex]}     
       \end{column}
-      \begin{column}{.25\paperwidth}
+      \begin{column}{.10\paperwidth}
+      \end{column}
+      \begin{column}{.10\paperwidth}
         \vskip8ex
         \begin{center}
-          logo goeth here lol
-          %\includegraphics[width=.95\linewidth]{figures/deselaers/logos/rwthaachenuniversity-yelloworange}
+          \includegraphics[width=.95\linewidth]{figure/glogo.png}
         \end{center}
         \vskip2ex
       \end{column}
-      \begin{column}{.02\paperwidth}
+      \begin{column}{.07\paperwidth}
       \end{column}
     \end{columns}
     \vskip2ex
-  \end{beamercolorbox}
-
-  \begin{beamercolorbox}[wd=\paperwidth]{lower separation line head}
-    \rule{0pt}{3pt}
   \end{beamercolorbox}
 }
 

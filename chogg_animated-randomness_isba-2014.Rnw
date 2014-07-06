@@ -5,9 +5,15 @@ require(ggplot2)
 require(grid)
 require(gridExtra)
 require(reshape2)
-theme_set(theme_grey(base_size=25))
+require(knitr)
 
-N.out <- 500
+opts_chunk$set(cache=TRUE, autodep=TRUE)
+
+theme_set(theme_grey(base_size=25))
+theme_update(panel.background=theme_rect(fill='transparent', colour=NA),
+             plot.background=theme_rect(fill='transparent', colour=NA))
+
+N.out <- 400
 N.frames <- 8
 t.frames <- 1:N.frames
 t.out <- seq(from=0, to=N.frames, length=N.out)
@@ -53,6 +59,13 @@ basis.plot <- function(mat, title) {
     )
   return (p)
 }
+
+MatrixPlot <- function(m) {
+  # A ggplot2 plot object showing the matrix.
+  return (ggplot(data=melt(m), aes(Var2, Var1, fill=value))
+          + geom_raster()
+          )
+}
 @
 
 %% Examples:
@@ -83,19 +96,26 @@ basis.plot <- function(mat, title) {
   \begin{columns}[T,onlytextwidth]
 
     % Left column.
-    \begin{column}{.38\linewidth}
+    \begin{column}{.325\linewidth}
 
       \begin{block}{Introduction}
         \begin{itemize}
           \item \textbf{Goal:} Visualize uncertainty in \textit{curves and
             surfaces}
+            \begin{itemize}
+              \item Specifically: using \textbf{Gaussian processes}
+                (see refresher at bottom)
+            \end{itemize}
           \item \textbf{Approach:} animations
             \begin{itemize}
               \item Each frame shows one draw from posterior
               \item Consecutive frames show similar curves
                 (i.e., \textit{continuous} animations)
+              \item \textit{Reducible}:
+                find \textbf{single ``Gaussian oscillator''};
+                use copies as needed
             \end{itemize}
-          \item \textbf{Results:}
+          \item \textbf{New Results:}
             \begin{itemize}
               \item \textbf{Smooth, keyframe-free} animations
               \item \textbf{New framework} for all future work in Gaussian
@@ -104,9 +124,10 @@ basis.plot <- function(mat, title) {
         \end{itemize}
       \end{block}
 
-      \begin{block}{Interpolation caveats}
+      \begin{block}{Existing approach:
+        interpolate between I.I.D. Gaussian draws}
         Linear interpolation: \textbf{variance too small} between keyframes
-<<interpolation, echo=FALSE, fig.width=14>>=
+<<interpolation, echo=FALSE, fig.width=13, fig.height=3.3>>=
 quantiles.between.keyframes <- function(interp.mat, t, n.lines, title) {
   # Given an interpolating matrix, plot the lines it creates, along with their
   # quantiles.  (Statistically correct interpolations should yield flat
@@ -148,15 +169,46 @@ grid.arrange(quantiles.between.keyframes(interp.linear, t.out, n.lines,
                                          "ESG interpolation"),
              ncol=2)
 @
-        Ehlschlaeger, Shortridge, Goodchild (\textbf{ESG}) solved in 1997
+        \begin{itemize}
+          \item Ehlschlaeger, Shortridge, Goodchild (\textbf{ESG})
+            solved in 1997 (see right figure)
+          \item Problem with \textit{both} approaches: keyframes are `special'
+            \begin{itemize}
+              \item Motion changes discontinuously
+              \item Even at $\Delta t = 1$, correlation can be surprisingly high
+                (up to 0.5)
+            \end{itemize}
+        \end{itemize}
+      \end{block}
+
+      \begin{block}{New approach: eliminate keyframes entirely}
+        \begin{itemize}
+          \item Still use I.I.D. normals, $\{\epsilon_i\}$,
+            but \textit{de-localize} rather than interpolate
+        \end{itemize}
+        \begin{equation*}
+          f(t) = \frac{1}{\sqrt{N}} \sum_{i=1}^N
+          \left[
+            \epsilon_{2i-1}\sin\left(\frac{\pi i t}{N}\right) +
+            \epsilon_{2i}  \cos\left(\frac{\pi i t}{N}\right)
+          \right]
+        \end{equation*}
+        \begin{itemize}
+          \item Correct statistical properties: 
+            $\langle f(t) \rangle = 0$;
+            $\langle f(t)^2 \rangle = 1$ \hspace{2em}
+            $\forall t$
+        \end{itemize}
       \end{block}
 
     \end{column}
 
     % Middle column.
-    \begin{column}{.32\linewidth}
+    \begin{column}{.325\linewidth}
 
       \begin{block}{Basis function view}
+        \vspace{-0.8em}
+        $$\textstyle f(t) = \sum_{i=1}^N \epsilon_i b_i(t)$$
         \begin{table}
           \begin{tabular}{|l|c|c|c|}
             \hline
@@ -191,7 +243,7 @@ print(basis.plot(interp.smooth, 'Smooth timetraces'))
       \begin{block}{Physical motion: basic kinematics}
         {\small Check \textit{velocity} and \textit{acceleration} for a
         fuller picture of how these animations move:} \\
-<<kinematics, echo=FALSE, fig.width=14, fig.height=7>>=
+<<kinematics, echo=FALSE, fig.width=14, fig.height=5.5>>=
 hacky_derivative <- function(mat, t, deriv=0) {
   # Take the derivative with respect to the rows.
   if (deriv == 0) {
@@ -216,6 +268,7 @@ graph <- function(label, interp.mat, deriv=0, scale=1, N.draws=60, seed=2) {
         + scale_x_continuous("")
         + coord_cartesian(ylim=3 * ((pi / 2) ^ (2 * deriv)) * c(-1, 1))
         + theme(axis.text.x=element_blank())
+        + theme(plot.margin=unit(rep(0.1, 4), "cm"))
         )
   return (p)
 }
@@ -227,28 +280,62 @@ graphs <- function(label, mat) {
 graphs.lin <- graphs(label="Linear Interpolation", mat=interp.linear)
 graphs.esg <- graphs(label="ESG Interpolation", mat=interp.esg)
 graphs.smooth <- graphs(label="Smooth Timetraces", mat=interp.smooth)
-grid.arrange(graphs.lin[[1]], graphs.lin[[2]], graphs.lin[[3]], 
+quickie.text <- function(x) grid.text(x, just='center', gp=gpar(fontsize=25))
+grid.arrange(quickie.text('Position'),
+             quickie.text('Velocity'),
+             quickie.text('Acceleration'),
+             graphs.lin[[1]], graphs.lin[[2]], graphs.lin[[3]], 
              graphs.esg[[1]], graphs.esg[[2]], graphs.esg[[3]], 
              graphs.smooth[[1]], graphs.smooth[[2]], graphs.smooth[[3]],
-             ncol=3)
-#grid.arrange(position_graph(label="Linear Interpolation",
-#                            interp.mat=interp.linear),
-#             position_graph(label="Linear Interpolation",
-#                            interp.mat=interp.linear),
-#             ncol = 1)
+             ncol=3,
+             heights=c(0.2, 1, 1, 1))
 @
         Motion is \textit{not different} at the keyframes
         \textbf{because they do not exist.}
         \\ \tiny (Also: add the dots, in the plots!)
-        \\ (And title the columns while I'm at it.)
       \end{block}
 
     \end{column}
 
     % Right column.
-    \begin{column}{.26\linewidth}
+    \begin{column}{.325\linewidth}
 
-      \begin{block}{The Infinite Limit}
+      \begin{block}{The true nature of $f(t)$}
+        \begin{itemize}
+          \item Observations about $f(t)$:
+            \begin{itemize}
+              \item Infinite set of Gaussian random variables
+              \item Indexed by continuous variable, $t$
+              \item Well-defined covariance between every pair of points:
+                \begin{equation*}
+                  \langle f(t) f(t + \tau) \rangle = \frac{1}{N} \sum_{i=1}^{N}
+                  \left[ 
+                    \cos \left( \frac{\pi i \tau}{N} \right)
+                  \right]
+                \end{equation*}
+            \end{itemize}
+          \item \textbf{Implication:} $f(t)$ is
+            \textit{itself a Gaussian process}
+            \begin{itemize}
+              \item Specifically: time-domain GP rather than space-domain
+            \end{itemize}
+          \item \textbf{Benefit:} Gaussian animations
+            \textit{revealed to belong to a well-studied framework}
+            \begin{itemize}
+              \item Future animations: take advantage of Gaussian Processes
+                \\ (e.g., try new covariance functions)
+            \end{itemize}
+        \end{itemize}
+      \end{block}
+
+      \begin{block}{\texttt{R} implementation}
+<<implementation, size='tiny', tidy=FALSE>>=
+# Matrix to turn 2N random values into Gaussian oscillator.
+GaussianOscillatorMatrix <- function(N, t) {
+  cbind(outer(t, 1:N, function(x, y) cos(pi * x * y / N)),
+        outer(t, N:1, function(x, y) sin(pi * x * y / N)))
+}
+@
       \end{block}
 
       \begin{block}{Conclusions}
@@ -389,7 +476,63 @@ print(many_side_by_side(8, 10, 10))
           \item Variables indexed by \textit{position}
         \end{itemize}
       \end{column}
-      \begin{column}{0.40\linewidth}
+      \begin{column}{0.12\linewidth}
+<<covariance_matrix, echo=FALSE>>=
+X <- seq(from=min(t.out), to=max(t.out), length.out=80)
+m <- outer(X, X, function(x, y) exp(-1.5 * (x - y) ^ 2))
+rownames(m) <- colnames(m) <- X
+p <- (MatrixPlot(m)
+      + scale_fill_gradient2(limits=c(-1, 1))
+      + scale_x_continuous(expression(X[1]))
+      + scale_y_reverse(expression(X[2]))
+      + coord_fixed(xlim=range(X), ylim=range(X))
+      + ggtitle(paste0("Specify covariance\n",
+                       "of every variable\n",
+                       "with every other variable"))
+      )
+print(p)
+@
+      \end{column}
+      \begin{column}{0.28\linewidth}
+        \centering
+        Get \textit{continuous} random function
+        from \textit{I.I.D.} normal draws:
+        \vspace{0.4em}
+<<random_function_draw, echo=FALSE, fig.width=13, fig.height=5>>=
+set.seed(3)
+random.draws <- rnorm(n=nrow(m))
+m.noisy <- m
+diag(m.noisy) <- diag(m.noisy) + 1e-5
+L <- t(chol(m.noisy))
+random.function <- L %*% random.draws
+PointPlot <- function(t, y) {
+  return (ggplot(data=data.frame(t=t, y=y), aes(x=t, y=y))
+          + geom_point()
+          + scale_x_continuous('X')
+          + scale_y_continuous('', limits=3 * c(-1, 1))
+          )
+}
+suppressWarnings(grid.arrange(PointPlot(X, random.function)
+                                 + ggtitle('Random function'),
+                              grid.text('=', just='center',
+                                        gp=gpar(fontsize=28)),
+                              MatrixPlot(L)
+                                  + ggtitle(paste0('Lower-Cholesky of\n',
+                                                   'Covariance Matrix'))
+                                  + scale_fill_gradient2(limits=c(-1, 1))
+                                  + theme(legend.position='none')
+                                  + scale_x_continuous('')
+                                  + scale_y_reverse('')
+                                  + coord_fixed(xlim=range(X),
+                                                ylim=range(X))
+                                  ,
+                              grid.text('×', just='center',
+                                        gp=gpar(fontsize=28)),
+                              PointPlot(X, random.draws)
+                                  + ggtitle('I.I.D. Normal Draws'),
+                 nrow=1,
+                 widths=c(1, 0.2, 1, 0.2, 1)))
+@
       \end{column}
     \end{columns}
   \end{block}

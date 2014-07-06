@@ -74,52 +74,90 @@
 \date{July 16, 2014}
 \IfFileExists{upquote.sty}{\usepackage{upquote}}{}
 \begin{document}
+
+\setlength{\leftmargini}{1.5em}
+
 \begin{frame}[fragile]
   \begin{columns}[T,onlytextwidth]
 
     % Left column.
-    \begin{column}{.32\linewidth}
+    \begin{column}{.325\linewidth}
 
       \begin{block}{Introduction}
         \begin{itemize}
           \item \textbf{Goal:} Visualize uncertainty in \textit{curves and
             surfaces}
+            \begin{itemize}
+              \item Specifically: using \textbf{Gaussian processes}
+                (see refresher at bottom)
+            \end{itemize}
           \item \textbf{Approach:} animations
             \begin{itemize}
               \item Each frame shows one draw from posterior
-              \item Consecutive frames differ infinitesimally (i.e.,
-                \textit{continuous} animations)
+              \item Consecutive frames show similar curves
+                (i.e., \textit{continuous} animations)
+              \item \textit{Reducible}:
+                find \textbf{single ``Gaussian oscillator''};
+                use copies as needed
             \end{itemize}
-          \item \textbf{Results:}
+          \item \textbf{New Results:}
             \begin{itemize}
-              \item \textbf{Smooth, keyframe-free} animations (moving
-                \textit{beyond interpolation})
+              \item \textbf{Smooth, keyframe-free} animations
               \item \textbf{New framework} for all future work in Gaussian
                 animations
             \end{itemize}
         \end{itemize}
       \end{block}
 
-      \begin{block}{Interpolation caveats}
+      \begin{block}{Existing approach:
+        interpolate between I.I.D. Gaussian draws}
+        Linear interpolation: \textbf{variance too small} between keyframes
 \begin{knitrout}
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
 \includegraphics[width=\maxwidth]{figure/interpolation} 
 
 \end{knitrout}
 
-        Na\"{i}ve interpolation: \textbf{variance too small} between keyframes
-        \\ \huge Next up: make side-by-side figure with ESG.  Show \textbf{actual}
-        quantiles.  (Means I need to make x-values and interpolate...)
+        \begin{itemize}
+          \item Ehlschlaeger, Shortridge, Goodchild (\textbf{ESG})
+            solved in 1997 (see right figure)
+          \item Problem with \textit{both} approaches: keyframes are `special'
+            \begin{itemize}
+              \item Motion changes discontinuously
+              \item Even at $\Delta t = 1$, correlation can be surprisingly high
+                (up to 0.5)
+            \end{itemize}
+        \end{itemize}
+      \end{block}
+
+      \begin{block}{New approach: eliminate keyframes entirely}
+        \begin{itemize}
+          \item Still use I.I.D. normals, $\{\epsilon_i\}$,
+            but \textit{de-localize} rather than interpolate
+        \end{itemize}
+        \begin{equation*}
+          f(t) = \frac{1}{\sqrt{N}} \sum_{i=1}^N
+          \left[
+            \epsilon_{2i-1}\sin\left(\frac{\pi i t}{N}\right) +
+            \epsilon_{2i}  \cos\left(\frac{\pi i t}{N}\right)
+          \right]
+        \end{equation*}
+        \begin{itemize}
+          \item Correct statistical properties: 
+            $\langle f(t) \rangle = 0$;
+            $\langle f(t)^2 \rangle = 1$ \hspace{2em}
+            $\forall t$
+        \end{itemize}
       \end{block}
 
     \end{column}
 
     % Middle column.
-    \begin{column}{.32\linewidth}
+    \begin{column}{.325\linewidth}
 
       \begin{block}{Basis function view}
-
-
+        \vspace{-0.8em}
+        $$\textstyle f(t) = \sum_{i=1}^N \epsilon_i b_i(t)$$
         \begin{table}
           \begin{tabular}{|l|c|c|c|}
             \hline
@@ -177,12 +215,64 @@
     \end{column}
 
     % Right column.
-    \begin{column}{.32\linewidth}
+    \begin{column}{.325\linewidth}
 
-      \begin{block}{The Infinite Limit}
+      \begin{block}{The true nature of $f(t)$}
+        \begin{itemize}
+          \item Observations about $f(t)$:
+            \begin{itemize}
+              \item Infinite set of Gaussian random variables
+              \item Indexed by continuous variable, $t$
+              \item Well-defined covariance between every pair of points:
+                \begin{equation*}
+                  \langle f(t) f(t + \tau) \rangle = \frac{1}{N} \sum_{i=1}^{N}
+                  \left[ 
+                    \cos \left( \frac{\pi i \tau}{N} \right)
+                  \right]
+                \end{equation*}
+            \end{itemize}
+          \item \textbf{Implication:} $f(t)$ is
+            \textit{itself a Gaussian process}
+            \begin{itemize}
+              \item Specifically: time-domain GP rather than space-domain
+            \end{itemize}
+          \item \textbf{Benefit:} Gaussian animations
+            \textit{revealed to belong to a well-studied framework}
+            \begin{itemize}
+              \item Future animations: take advantage of Gaussian Processes
+                \\ (e.g., try new covariance functions)
+            \end{itemize}
+        \end{itemize}
       \end{block}
 
-      \begin{block}{Conclusion}
+      \begin{block}{\texttt{R} implementation}
+\begin{knitrout}\tiny
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlcom{# Matrix to turn 2N random values into Gaussian oscillator.}
+\hlstd{GaussianOscillatorMatrix} \hlkwb{<-} \hlkwa{function}\hlstd{(}\hlkwc{N}\hlstd{,} \hlkwc{t}\hlstd{) \{}
+  \hlkwd{cbind}\hlstd{(}\hlkwd{outer}\hlstd{(t,} \hlnum{1}\hlopt{:}\hlstd{N,} \hlkwa{function}\hlstd{(}\hlkwc{x}\hlstd{,} \hlkwc{y}\hlstd{)} \hlkwd{cos}\hlstd{(pi} \hlopt{*} \hlstd{x} \hlopt{*} \hlstd{y} \hlopt{/} \hlstd{N)),}
+        \hlkwd{outer}\hlstd{(t, N}\hlopt{:}\hlnum{1}\hlstd{,} \hlkwa{function}\hlstd{(}\hlkwc{x}\hlstd{,} \hlkwc{y}\hlstd{)} \hlkwd{sin}\hlstd{(pi} \hlopt{*} \hlstd{x} \hlopt{*} \hlstd{y} \hlopt{/} \hlstd{N)))}
+\hlstd{\}}
+\end{alltt}
+\end{kframe}
+\end{knitrout}
+
+      \end{block}
+
+      \begin{block}{Conclusions}
+        \begin{itemize}
+          \item First \textit{statistically correct} Gaussian animations with
+            \textbf{smooth and natural motion}
+          \item Moving beyond interpolation: \textbf{keyframes entirely
+            eliminated}
+          \item \textbf{Time-domain Gaussian Processes} enable \textit{animated
+            visualization} of \textbf{space-domain Gaussian Processes}
+            \begin{itemize}
+              \item \textit{Stationary} covariance function $\rightarrow$
+                \textit{no keyframes}
+            \end{itemize}
+        \end{itemize}
       \end{block}
 
     \end{column}
@@ -241,7 +331,25 @@
           \item Variables indexed by \textit{position}
         \end{itemize}
       \end{column}
-      \begin{column}{0.40\linewidth}
+      \begin{column}{0.12\linewidth}
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+\includegraphics[width=\maxwidth]{figure/covariance_matrix} 
+
+\end{knitrout}
+
+      \end{column}
+      \begin{column}{0.28\linewidth}
+        \centering
+        Get \textit{continuous} random function
+        from \textit{I.I.D.} normal draws:
+        \vspace{0.4em}
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+\includegraphics[width=\maxwidth]{figure/random_function_draw} 
+
+\end{knitrout}
+
       \end{column}
     \end{columns}
   \end{block}
