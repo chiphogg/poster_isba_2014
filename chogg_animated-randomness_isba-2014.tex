@@ -78,12 +78,15 @@
 \setlength{\leftmargini}{1.5em}
 
 \begin{frame}[fragile]
+  \vspace{-0.5em}
   \begin{columns}[T,onlytextwidth]
 
     % Left column.
     \begin{column}{.325\linewidth}
 
+      \vbox to .698\textheight{%
       \begin{block}{Introduction}
+        \vspace{-0.5em}
         \begin{itemize}
           \item \textbf{Goal:} Visualize uncertainty in \textit{curves and
             surfaces}
@@ -109,8 +112,11 @@
         \end{itemize}
       \end{block}
 
+      \vfill
+
       \begin{block}{Existing approach:
         interpolate between I.I.D. Gaussian draws}
+        \vspace{-0.5em}
         Linear interpolation: \textbf{variance too small} between keyframes
 \begin{knitrout}
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
@@ -130,7 +136,10 @@
         \end{itemize}
       \end{block}
 
+      \vfill
+
       \begin{block}{New approach: eliminate keyframes entirely}
+        \vspace{-0.5em}
         \begin{itemize}
           \item Still use I.I.D. normals, $\{\epsilon_i\}$,
             but \textit{de-localize} rather than interpolate
@@ -144,20 +153,22 @@
         \end{equation*}
         \begin{itemize}
           \item Correct statistical properties: 
-            $\langle f(t) \rangle = 0$;
-            $\langle f(t)^2 \rangle = 1$ \hspace{2em}
+            $\langle f(t) \rangle = 0$; \hspace{1em}
+            $\langle f(t)^2 \rangle = 1$ \hspace{1em}
             $\forall t$
         \end{itemize}
       \end{block}
 
+      }%
     \end{column}
 
     % Middle column.
     \begin{column}{.325\linewidth}
 
+      \vbox to .698\textheight{%
       \begin{block}{Basis function view}
         \vspace{-0.8em}
-        $$\textstyle f(t) = \sum_{i=1}^N \epsilon_i b_i(t)$$
+        $$\textstyle f(t) = \sum\limits_{i=1}^N \epsilon_i b_i(t)$$
         \begin{table}
           \begin{tabular}{|l|c|c|c|}
             \hline
@@ -198,6 +209,8 @@
 
       \end{block}
 
+      \vfill
+
       \begin{block}{Physical motion: basic kinematics}
         {\small Check \textit{velocity} and \textit{acceleration} for a
         fuller picture of how these animations move:} \\
@@ -209,14 +222,15 @@
 
         Motion is \textit{not different} at the keyframes
         \textbf{because they do not exist.}
-        \\ \tiny (Also: add the dots, in the plots!)
       \end{block}
 
+      }%
     \end{column}
 
     % Right column.
     \begin{column}{.325\linewidth}
 
+      \vbox to .698\textheight{%
       \begin{block}{The true nature of $f(t)$}
         \begin{itemize}
           \item Observations about $f(t)$:
@@ -233,17 +247,18 @@
             \end{itemize}
           \item \textbf{Implication:} $f(t)$ is
             \textit{itself a Gaussian process}
-            \begin{itemize}
-              \item Specifically: time-domain GP rather than space-domain
-            \end{itemize}
+            (in the \textit{time} domain)
           \item \textbf{Benefit:} Gaussian animations
-            \textit{revealed to belong to a well-studied framework}
+            \textit{revealed to belong to a \\ well-studied framework}
             \begin{itemize}
-              \item Future animations: take advantage of Gaussian Processes
+              \item Future animations can leverage existing Gaussian Process
+                work
                 \\ (e.g., try new covariance functions)
             \end{itemize}
         \end{itemize}
       \end{block}
+
+      \vfill
 
       \begin{block}{\texttt{R} implementation}
 \begin{knitrout}\tiny
@@ -260,24 +275,38 @@
 
       \end{block}
 
+      \vfill
+
       \begin{block}{Conclusions}
         \begin{itemize}
           \item First \textit{statistically correct} Gaussian animations with
-            \textbf{smooth and natural motion}
+            \textbf{smooth and \\ natural motion}
           \item Moving beyond interpolation: \textbf{keyframes entirely
             eliminated}
-          \item \textbf{Time-domain Gaussian Processes} enable \textit{animated
-            visualization} of \textbf{space-domain Gaussian Processes}
-            \begin{itemize}
-              \item \textit{Stationary} covariance function $\rightarrow$
-                \textit{no keyframes}
-            \end{itemize}
+            
+          \item \ \vspace{-1.2em} \\
+            { \centering
+              \textbf{Time-domain Gaussian Processes}
+              \\ enable \textit{animated visualization} of 
+              \\ \textbf{Space-domain Gaussian Processes}
+              \begin{itemize}
+                \item To eliminate keyframes,
+                  use \textit{stationary} covariance function
+              \end{itemize}
+            }
         \end{itemize}
       \end{block}
 
+      }%
     \end{column}
 
   \end{columns}
+
+  \vspace{0.5em}
+  \begin{beamercolorbox}[wd=0.9875\paperwidth]{sepline}
+    \centering
+    \rule{0pt}{3pt}
+  \end{beamercolorbox}
 
   \begin{block}{Gaussian Processes refresher: Probabilities for Functions}
     \begin{columns}[T]

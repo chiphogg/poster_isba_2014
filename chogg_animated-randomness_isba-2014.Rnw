@@ -83,7 +83,7 @@ MatrixPlot <- function(m) {
 \newcommand{\xmark}{\ding{55}}%
 \usefonttheme[onlymath]{serif}
 \boldmath
-\usepackage[orientation=landscape,size=a0,scale=1.4,debug]{beamerposter}                       % e.g. for DIN-A0 poster
+\usepackage[orientation=landscape,size=a0,scale=1.4,debug]{beamerposter}
 \title[Smooth Animations]{\huge Smooth Animations to Visualize Gaussian Uncertainty}
 \author{Charles~R.~Hogg~III}
 \institute[Google]{Google, Inc.}
@@ -93,12 +93,15 @@ MatrixPlot <- function(m) {
 \setlength{\leftmargini}{1.5em}
 
 \begin{frame}[fragile]
+  \vspace{-0.5em}
   \begin{columns}[T,onlytextwidth]
 
     % Left column.
     \begin{column}{.325\linewidth}
 
+      \vbox to .698\textheight{%
       \begin{block}{Introduction}
+        \vspace{-0.5em}
         \begin{itemize}
           \item \textbf{Goal:} Visualize uncertainty in \textit{curves and
             surfaces}
@@ -124,10 +127,13 @@ MatrixPlot <- function(m) {
         \end{itemize}
       \end{block}
 
+      \vfill
+
       \begin{block}{Existing approach:
         interpolate between I.I.D. Gaussian draws}
+        \vspace{-0.5em}
         Linear interpolation: \textbf{variance too small} between keyframes
-<<interpolation, echo=FALSE, fig.width=13, fig.height=3.3>>=
+<<interpolation, echo=FALSE, fig.width=13, fig.height=3.8>>=
 quantiles.between.keyframes <- function(interp.mat, t, n.lines, title) {
   # Given an interpolating matrix, plot the lines it creates, along with their
   # quantiles.  (Statistically correct interpolations should yield flat
@@ -159,6 +165,7 @@ quantiles.between.keyframes <- function(interp.mat, t, n.lines, title) {
                    colour='black')
       + geom_line(data=df.quantiles, colour='purple')
       + coord_cartesian(ylim=3 * c(-1, 1))
+      + theme(axis.text.y = element_blank(), axis.title.y = element_blank())
       + ggtitle(title)
       )
 }
@@ -181,7 +188,10 @@ grid.arrange(quantiles.between.keyframes(interp.linear, t.out, n.lines,
         \end{itemize}
       \end{block}
 
+      \vfill
+
       \begin{block}{New approach: eliminate keyframes entirely}
+        \vspace{-0.5em}
         \begin{itemize}
           \item Still use I.I.D. normals, $\{\epsilon_i\}$,
             but \textit{de-localize} rather than interpolate
@@ -195,20 +205,22 @@ grid.arrange(quantiles.between.keyframes(interp.linear, t.out, n.lines,
         \end{equation*}
         \begin{itemize}
           \item Correct statistical properties: 
-            $\langle f(t) \rangle = 0$;
-            $\langle f(t)^2 \rangle = 1$ \hspace{2em}
+            $\langle f(t) \rangle = 0$; \hspace{1em}
+            $\langle f(t)^2 \rangle = 1$ \hspace{1em}
             $\forall t$
         \end{itemize}
       \end{block}
 
+      }%
     \end{column}
 
     % Middle column.
     \begin{column}{.325\linewidth}
 
+      \vbox to .698\textheight{%
       \begin{block}{Basis function view}
         \vspace{-0.8em}
-        $$\textstyle f(t) = \sum_{i=1}^N \epsilon_i b_i(t)$$
+        $$\textstyle f(t) = \sum\limits_{i=1}^N \epsilon_i b_i(t)$$
         \begin{table}
           \begin{tabular}{|l|c|c|c|}
             \hline
@@ -240,10 +252,12 @@ print(basis.plot(interp.smooth, 'Smooth timetraces'))
 
       \end{block}
 
+      \vfill
+
       \begin{block}{Physical motion: basic kinematics}
         {\small Check \textit{velocity} and \textit{acceleration} for a
         fuller picture of how these animations move:} \\
-<<kinematics, echo=FALSE, fig.width=14, fig.height=5.5>>=
+<<kinematics, echo=FALSE, fig.width=14, fig.height=5.7>>=
 hacky_derivative <- function(mat, t, deriv=0) {
   # Take the derivative with respect to the rows.
   if (deriv == 0) {
@@ -253,7 +267,8 @@ hacky_derivative <- function(mat, t, deriv=0) {
   t.aug <- c(t, t[1])
   hacky_derivative(diff(mat.aug) / diff(t.aug), t, deriv - 1)
 }
-graph <- function(label, interp.mat, deriv=0, scale=1, N.draws=60, seed=2) {
+graph <- function(label, interp.mat, deriv=0, scale=1, N.draws=60, seed=2,
+                  show_keyframes=FALSE) {
   set.seed(seed)
   mat <- hacky_derivative(interp.mat, t=t.out, deriv=deriv)
   random.data <- matrix(rnorm(n=ncol(mat) * N.draws), ncol=N.draws)
@@ -270,17 +285,24 @@ graph <- function(label, interp.mat, deriv=0, scale=1, N.draws=60, seed=2) {
         + theme(axis.text.x=element_blank())
         + theme(plot.margin=unit(rep(0.1, 4), "cm"))
         )
+  if (show_keyframes) {
+    p <- p + geom_point(data=data.frame(t=0:nrow(random.data),
+                                        y=c(tail(random.data[, 1], 1),
+                                            random.data[, 1])),
+                        aes(x=t, y=y), inherit.aes=FALSE)
+  }
   return (p)
 }
 graphs <- function(label, mat) {
-  list(graph(label, mat, deriv=0, scale=2),
+  interpolating <- length(grep('Interpolation', label)) > 0
+  list(graph(label, mat, deriv=0, scale=2, show_keyframes=interpolating),
        graph(label, mat, deriv=1, scale=5),
        graph(label, mat, deriv=2, scale=10))
 }
 graphs.lin <- graphs(label="Linear Interpolation", mat=interp.linear)
 graphs.esg <- graphs(label="ESG Interpolation", mat=interp.esg)
 graphs.smooth <- graphs(label="Smooth Timetraces", mat=interp.smooth)
-quickie.text <- function(x) grid.text(x, just='center', gp=gpar(fontsize=25))
+quickie.text <- function(x) textGrob(x, just='center', gp=gpar(fontsize=25))
 grid.arrange(quickie.text('Position'),
              quickie.text('Velocity'),
              quickie.text('Acceleration'),
@@ -292,14 +314,15 @@ grid.arrange(quickie.text('Position'),
 @
         Motion is \textit{not different} at the keyframes
         \textbf{because they do not exist.}
-        \\ \tiny (Also: add the dots, in the plots!)
       \end{block}
 
+      }%
     \end{column}
 
     % Right column.
     \begin{column}{.325\linewidth}
 
+      \vbox to .698\textheight{%
       \begin{block}{The true nature of $f(t)$}
         \begin{itemize}
           \item Observations about $f(t)$:
@@ -316,17 +339,18 @@ grid.arrange(quickie.text('Position'),
             \end{itemize}
           \item \textbf{Implication:} $f(t)$ is
             \textit{itself a Gaussian process}
-            \begin{itemize}
-              \item Specifically: time-domain GP rather than space-domain
-            \end{itemize}
+            (in the \textit{time} domain)
           \item \textbf{Benefit:} Gaussian animations
-            \textit{revealed to belong to a well-studied framework}
+            \textit{revealed to belong to a \\ well-studied framework}
             \begin{itemize}
-              \item Future animations: take advantage of Gaussian Processes
+              \item Future animations can leverage existing Gaussian Process
+                work
                 \\ (e.g., try new covariance functions)
             \end{itemize}
         \end{itemize}
       \end{block}
+
+      \vfill
 
       \begin{block}{\texttt{R} implementation}
 <<implementation, size='tiny', tidy=FALSE>>=
@@ -338,24 +362,38 @@ GaussianOscillatorMatrix <- function(N, t) {
 @
       \end{block}
 
+      \vfill
+
       \begin{block}{Conclusions}
         \begin{itemize}
           \item First \textit{statistically correct} Gaussian animations with
-            \textbf{smooth and natural motion}
+            \textbf{smooth and \\ natural motion}
           \item Moving beyond interpolation: \textbf{keyframes entirely
             eliminated}
-          \item \textbf{Time-domain Gaussian Processes} enable \textit{animated
-            visualization} of \textbf{space-domain Gaussian Processes}
-            \begin{itemize}
-              \item \textit{Stationary} covariance function $\rightarrow$
-                \textit{no keyframes}
-            \end{itemize}
+            
+          \item \ \vspace{-1.2em} \\
+            { \centering
+              \textbf{Time-domain Gaussian Processes}
+              \\ enable \textit{animated visualization} of 
+              \\ \textbf{Space-domain Gaussian Processes}
+              \begin{itemize}
+                \item To eliminate keyframes,
+                  use \textit{stationary} covariance function
+              \end{itemize}
+            }
         \end{itemize}
       \end{block}
 
+      }%
     \end{column}
 
   \end{columns}
+
+  \vspace{0.5em}
+  \begin{beamercolorbox}[wd=0.9875\paperwidth]{sepline}
+    \centering
+    \rule{0pt}{3pt}
+  \end{beamercolorbox}
 
   \begin{block}{Gaussian Processes refresher: Probabilities for Functions}
     \begin{columns}[T]
@@ -389,8 +427,8 @@ twod_scatterplot <- function(n, old=0) {
   lim <- 3
   p <- (ggplot(data=d, aes(x=x, y=y, colour=type))
     + geom_point(size=2)
-    + scale_x_continuous("X1", limits=c(-lim, lim))
-    + scale_y_continuous("X2", limits=c(-lim, lim))
+    + scale_x_continuous(expression(X[1]), limits=c(-lim, lim))
+    + scale_y_continuous(expression(X[2]), limits=c(-lim, lim))
     + scale_colour_manual(values=c(a='grey40', b='black'))
     + theme(legend.position='none')
     + ggtitle("Scatterplot View")
@@ -427,7 +465,7 @@ twod_side_by_side <- function(n, old=0) {
   p <- (ggplot(data=d_melt, aes(x=variable, y=value, group=id, colour=type))
     + geom_point(size=4)
     + geom_line(size=1.5)
-    + scale_x_discrete("variable")
+    + scale_x_discrete("variable", labels=c(expression(X[1]), expression(X[2])))
     + scale_y_continuous("value", limits=c(-lim, lim))
     + scale_colour_manual(values=c(a='grey40', b='black'))
     + theme(legend.position='none')
@@ -445,6 +483,10 @@ suppressWarnings(print(twod_side_by_side(total.points, old.points)))
       \end{column}
       \begin{column}{0.12\linewidth}
 <<many_side_by_side, echo=FALSE>>=
+x_sub <- function(i) {
+  # Create 'expression' objects, X[i], for each i.  Useful for labeling.
+  apply(array(i), 1, FUN=function(x) bquote(X[.(x + 0)]))
+}
 many_side_by_side <- function(k, n, i) {
   set.seed(3)
   X <- 1:k
@@ -461,7 +503,7 @@ many_side_by_side <- function(k, n, i) {
   p <- (ggplot(data=d_melt, aes(x=as.numeric(substring(variable, 3)), y=value, group=id, colour=highlight))
     + geom_point(size=4)
     + geom_line(size=1.5)
-    + scale_x_continuous("variable", breaks=1:k, labels=paste("X", 1:k, sep=''))
+    + scale_x_continuous("variable", breaks=1:k, labels=x_sub(1:k))
     + scale_y_continuous("value", limits=c(-lim, lim))
     + scale_colour_manual("", values=c(yes='red', no='grey50'))
     + theme(legend.position='none')
@@ -482,7 +524,7 @@ X <- seq(from=min(t.out), to=max(t.out), length.out=80)
 m <- outer(X, X, function(x, y) exp(-1.5 * (x - y) ^ 2))
 rownames(m) <- colnames(m) <- X
 p <- (MatrixPlot(m)
-      + scale_fill_gradient2(limits=c(-1, 1))
+      + scale_fill_gradient2('Covariance', limits=c(-1, 1))
       + scale_x_continuous(expression(X[1]))
       + scale_y_reverse(expression(X[2]))
       + coord_fixed(xlim=range(X), ylim=range(X))
