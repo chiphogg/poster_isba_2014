@@ -55,14 +55,27 @@ total.time <- N.keyframes
 dt <- total.time / N.frames
 t.out <- seq(from=dt, to=total.time, by=dt)
 
-# Construct the matrices.
+# Seeds for "basis function" type matrices.
 N.points <- ncol(L.strain)
 seed.matrix <- matrix(rnorm(n=N.keyframes * N.points), nrow=N.keyframes)
+
+# Arbitrary GP matrices.
+RandomMatrix <- function(N.points, t, FUN) {
+  N.frames <- length(t)
+  K <- outer(t, t, FUN)
+  L.t <- chol(K + diag(1e-8, nrow=N.frames))
+  matrix(nrow=N.points, rnorm(n=N.points * N.frames)) %*% L.t
+}
+Brownian <- function(sigma) function(x, y) exp(-abs(x - y) / sigma)
+SE <- function(sigma) function(x, y) exp(-((x - y) / sigma) ^ 2)
 
 # Construct the animations.
 SteelStrainAnimation(
     t(InterpESG(t.out=t.out, N.frames=N.keyframes) %*% seed.matrix), 'esg')
 SteelStrainAnimation(
     t(MyMatrix(t=t.out, N=N.smoothseeds) %*% seed.matrix), 'smooth')
+SteelStrainAnimation(RandomMatrix(N.points, t.out, Brownian(0.5)), 'brownie')
+SteelStrainAnimation(RandomMatrix(N.points, t.out, SE(0.5)), 'se')
+
 
 cat("done!\n")
