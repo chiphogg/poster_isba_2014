@@ -29,13 +29,20 @@ SteelStrainAnimation <- function(random.matrix, label) {
   par3d(windowRect = 50 + c(0, 0, width, height))
   view3d(theta=45, phi=25, zoom=0.4)
   N.frames <- ncol(random.matrix)
-  for (i in 1:N.frames) {
+  PlotFrame <- function(i, show.true) {
     d.strain$Plot2D(dist.factor=0.15, max.points=Inf, Y.scale=500, clear=TRUE)
-    d.gap$Plot2D(dist.factor=0.15, max.points=Inf, Y.scale=500, clear=FALSE,
-                 color='blue')
+    if (show.true) {
+      d.gap$Plot2D(dist.factor=0.15, max.points=Inf, Y.scale=500, clear=FALSE,
+                   color='blue')
+    }
     PlotSurface(X=x.grid, Y=time.mat[, i])
-    rgl.snapshot(filename=sprintf('%s/steel_strain_%04d.png', anim.dir, i),
-      top=TRUE)
+    tag <- ifelse(show.true, '_true', '')
+    filename <- sprintf('%s/steel_strain%s_%04d.png', anim.dir, tag, i)
+    rgl.snapshot(filename=filename, top=TRUE)
+  }
+  for (i in 1:N.frames) {
+    PlotFrame(i, TRUE)
+    PlotFrame(i, FALSE)
   }
   rgl.close()
 }
