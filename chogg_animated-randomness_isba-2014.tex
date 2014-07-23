@@ -67,7 +67,7 @@
 \newcommand{\xmark}{\ding{55}}%
 \usefonttheme[onlymath]{serif}
 \boldmath
-\usepackage[orientation=landscape,size=a0,scale=1.4,debug]{beamerposter}                       % e.g. for DIN-A0 poster
+\usepackage[orientation=landscape,size=a0,scale=1.4,debug]{beamerposter}
 \title[Smooth Animations]{\huge Smooth Animations to Visualize Gaussian Uncertainty}
 \author{Charles~R.~Hogg~III}
 \institute[Google]{Google, Inc.}
@@ -266,8 +266,9 @@
 \begin{alltt}
 \hlcom{# Matrix to turn 2N random values into Gaussian oscillator.}
 \hlstd{GaussianOscillatorMatrix} \hlkwb{<-} \hlkwa{function}\hlstd{(}\hlkwc{N}\hlstd{,} \hlkwc{t}\hlstd{) \{}
-  \hlkwd{cbind}\hlstd{(}\hlkwd{outer}\hlstd{(t,} \hlnum{1}\hlopt{:}\hlstd{N,} \hlkwa{function}\hlstd{(}\hlkwc{x}\hlstd{,} \hlkwc{y}\hlstd{)} \hlkwd{cos}\hlstd{(pi} \hlopt{*} \hlstd{x} \hlopt{*} \hlstd{y} \hlopt{/} \hlstd{N)),}
-        \hlkwd{outer}\hlstd{(t, N}\hlopt{:}\hlnum{1}\hlstd{,} \hlkwa{function}\hlstd{(}\hlkwc{x}\hlstd{,} \hlkwc{y}\hlstd{)} \hlkwd{sin}\hlstd{(pi} \hlopt{*} \hlstd{x} \hlopt{*} \hlstd{y} \hlopt{/} \hlstd{N)))}
+  \hlstd{(}\hlkwd{cbind}\hlstd{(}\hlkwd{outer}\hlstd{(t,} \hlnum{1}\hlopt{:}\hlstd{N,} \hlkwa{function}\hlstd{(}\hlkwc{x}\hlstd{,} \hlkwc{y}\hlstd{)} \hlkwd{cos}\hlstd{(pi} \hlopt{*} \hlstd{x} \hlopt{*} \hlstd{y} \hlopt{/} \hlstd{N)),}
+         \hlkwd{outer}\hlstd{(t, N}\hlopt{:}\hlnum{1}\hlstd{,} \hlkwa{function}\hlstd{(}\hlkwc{x}\hlstd{,} \hlkwc{y}\hlstd{)} \hlkwd{sin}\hlstd{(pi} \hlopt{*} \hlstd{x} \hlopt{*} \hlstd{y} \hlopt{/} \hlstd{N)))}
+   \hlopt{/} \hlkwd{sqrt}\hlstd{(N))}
 \hlstd{\}}
 \end{alltt}
 \end{kframe}
