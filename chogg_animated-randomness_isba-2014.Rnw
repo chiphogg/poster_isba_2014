@@ -330,8 +330,9 @@ grid.arrange(quickie.text('Position'),
 <<implementation, size='tiny', tidy=FALSE>>=
 # Matrix to turn 2N random values into Gaussian oscillator.
 GaussianOscillatorMatrix <- function(N, t) {
-  cbind(outer(t, 1:N, function(x, y) cos(pi * x * y / N)),
-        outer(t, N:1, function(x, y) sin(pi * x * y / N)))
+  (cbind(outer(t, 1:N, function(x, y) cos(pi * x * y / N)),
+         outer(t, N:1, function(x, y) sin(pi * x * y / N)))
+   / sqrt(N))
 }
 @
       \end{block}
